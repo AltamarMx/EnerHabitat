@@ -1,0 +1,31 @@
+[project]
+name = "enerhabitat"
+version = "0.1.0"
+authors = [
+    {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"},
+    {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"}
+]
+description = "Paquete instalable para EnerHabitat"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Spanish",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education :: Testing",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+license = "MIT"
+license-files = ["LICENSE*"]
+
+[project.urls]
+Homepage = "https://github.com/AltamarMx/eh_development"
+Issues = "https://github.com/AltamarMx/eh_development"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
