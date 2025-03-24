@@ -8,7 +8,7 @@ authors = [
 description = "Paquete instalable para EnerHabitat"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
+classifiers = [
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -20,7 +20,12 @@ dependencies = [
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 license = "MIT"
-license-files = ["LICENSE*"]
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "iertools",
+    "numpy>=2.2.4",
+    "pandas>=2.2.3",
+]
 
 [project.urls]
 Homepage = "https://github.com/AltamarMx/eh_development"
@@ -29,3 +34,6 @@ Issues = "https://github.com/AltamarMx/eh_development"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+iertools = { git = "https://github.com/AltamarMx/iertools.git" }
