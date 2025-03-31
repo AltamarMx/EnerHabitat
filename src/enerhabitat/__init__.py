@@ -64,6 +64,17 @@ def calculateTSA(file, ho, solar_absortance, inclination, azimuth, month):
     # Agrega Ig, Ib, Id a dia 
     dia = add_IgIbId_Tn(dia,epw,mes,f1,f2,timezone)
     
+    total_irradiance = pvlib.irradiance.get_total_irradiance(
+        surface_tilt=surface_tilt,
+        surface_azimuth=surface_azimuth,
+        dni=dia['Ib'],
+        ghi=dia['Ig'],
+        dhi=dia['Id'],
+        solar_zenith=dia['zenith'],
+        solar_azimuth=dia['azimuth']
+    )
+    dia['Is'] = total_irradiance.poa_global
+    
     # Agrega Tsa, DeltaTn
     dia['Tsa'] = dia.Ta + dia.Is*absortancia/h - LWR
     DeltaTa= dia.Ta.max() - dia.Ta.min()
