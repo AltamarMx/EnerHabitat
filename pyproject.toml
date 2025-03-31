@@ -22,9 +22,7 @@ classifiers = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
-    "iertools",
-    "numpy>=2.2.4",
-    "pandas>=2.2.3",
+    "pvlib>=0.12.0",
 ]
 
 [project.urls]
@@ -34,6 +32,3 @@ Issues = "https://github.com/AltamarMx/eh_development"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.uv.sources]
-iertools = { git = "https://github.com/AltamarMx/iertools.git" }
