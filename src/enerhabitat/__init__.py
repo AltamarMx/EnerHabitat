@@ -89,6 +89,8 @@ def calculateTSA(file, ho, solar_absortance, inclination, azimuth, month):
     Tmin =  epw_mes.resample('D').To.min().resample('ME').mean().iloc[0]
     Tmax =  epw_mes.resample('D').To.max().resample('ME').mean().iloc[0]
 
+    return dia
+    
 """
 def plot_Tsa_Ta(dia):
     
