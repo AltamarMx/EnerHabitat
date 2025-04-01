@@ -120,7 +120,16 @@ def readEPW(file,year=None,alias=False,warns=True):
     year -- None default to leave intact the year or change if desired. It raises a warning.
     alias -- False default, True to change to To, Ig, Ib, Ws, RH, ...
     """
-  
+    
+    datos=[]
+    with open(file,'r') as epw:
+        datos=epw.readline().split(',')
+    lat = float(datos[6])
+    lon = float(datos[7])
+    tmz = 'Etc/GMT'+datos[8].split('.')[0]
+    alt = float(datos[9])
+    
+    
     names = ['Year',
              'Month',
              'Day',
@@ -165,9 +174,8 @@ def readEPW(file,year=None,alias=False,warns=True):
              'Diffuse Horizontal Radiation':'Id',
              'Wind Direction'              :'Wd',
              'Wind Speed'                  :'Ws'}
+    
     data = pd.read_csv(file,skiprows=8,header=None,names=names,usecols=range(35))
-#   data.Minute = 0
-#   data.loc[data.Hour==24,['Hour','Minute']] = [23,59]
     data.Hour = data.Hour -1
     if year != None:
         data.Year = year
@@ -189,7 +197,7 @@ def readEPW(file,year=None,alias=False,warns=True):
     del data['Minute']
     if alias:
         data.rename(columns=rename,inplace=True)
-    return data
+    return data, lat, lon, alt, tmz
 
 def toEPW(file,df,epw_file):
     """

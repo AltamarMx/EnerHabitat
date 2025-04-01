@@ -1,12 +1,10 @@
 import pvlib
-import locale
-import pytz
 
 from .ehtools import *
 
-def calculateTSA(file, ho, solar_absortance, inclination, azimuth, month):
+def calculateTsa(epw_file_path:str, convection_heat_transfer:float, solar_absortance:float, inclination:float, azimuth:float, month:str, year:str):
     """
-    Calculate TSA for a surface based on EPW file 
+    Calculate Tsa for a surface based on EPW file 
 
     Arguments:
     ----------
@@ -15,22 +13,17 @@ def calculateTSA(file, ho, solar_absortance, inclination, azimuth, month):
     solar_absortance -- Solar absortance for the material
     inclination -- Inclination of the surface 90 - Vertical
     azimuth -- 270
-    month -- Month of interest "01, 02, ...11, 12"
+    month -- Month of interest
+    year -- Year of interest
     """
     
-    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
-    timezone = pytz.timezone('America/Mexico_City')
-    
-    epw = readEPW(file,alias=True,year='2024',warns=False)
-    
-    lat = 18.8502768
-    lon = -99.2837051
-    altitude = 1280
-    
+    epw, latitud, longitud, altitud, timezone = readEPW(epw_file_path,year,alias=True,warns=False)
+        
     dia = '15'
     mes = month
+    año = year
     absortancia = solar_absortance
-    h = ho
+    h = convection_heat_transfer
 
     # Parámetros de la superficie
     surface_tilt = inclination  # 90 - Vertical
@@ -41,15 +34,14 @@ def calculateTSA(file, ho, solar_absortance, inclination, azimuth, month):
     else:
         LWR = 0.
 
-    f1 = f'2024-{mes}-{dia} 00:00'
-    f2 = f'2024-{mes}-{dia} 23:59'
+    f1 = f'{año}-{mes}-{dia} 00:00'
+    f2 = f'{año}-{mes}-{dia} 23:59'
 
     dia = pd.date_range(start=f1, end=f2, freq='1s',tz=timezone)
-    location = pvlib.location.Location(latitude = lat, 
-                                       longitude=lon, 
-                                       altitude=altitude,
-                                       tz=timezone,
-                                       name='Temixco,Mor')
+    location = pvlib.location.Location(latitude = latitud, 
+                                       longitude=longitud, 
+                                       altitude=altitud,
+                                       tz=timezone)
 
     dia = location.get_solarposition(dia)
     del dia['apparent_zenith']
@@ -91,49 +83,3 @@ def calculateTSA(file, ho, solar_absortance, inclination, azimuth, month):
 
     return dia
     
-"""
-def plot_Tsa_Ta(dia):
-    
-    df = dia.reset_index().iloc[::600]
-    fig = px.line(df,x="index",y=["Tsa","Ta"])
-    fig.add_trace(go.Scatter(
-                            x=df["index"], 
-                            y=df['Tn'] + df['DeltaTn'], 
-                            mode='lines',
-                            showlegend=False , 
-                            line=dict(color='rgba(0,0,0,0)')
-                            )
-    )
-    
-    fig.add_trace(go.Scatter(
-                            x=df["index"], 
-                            y=df['Tn'] -df['DeltaTn'], 
-                            mode='lines',
-                            showlegend=False , 
-                            fill='tonexty',
-                            line=dict(color='rgba(0,0,0,0)'),
-                            fillcolor='rgba(0,255,0,0.3)'
-                            )
-    )
-    
-    # Personalizar el layout
-    
-    fig.update_layout(
-        yaxis_title='Temperatura (°C)',
-        legend_title='',  # Quitar el título de la leyenda
-        xaxis_title=''
-    )
-    return fig
-
-def plot_I(dia):
-    df = dia.reset_index().iloc[::600]
-    fig = px.line(df,x="index",y=["Ig","Ib","Id","Is"])
-
-# Personalizar el layout
-    fig.update_layout(
-        yaxis_title='Temp (oC)',
-        legend_title='',  # Quitar el título de la leyenda
-        xaxis_title=''
-    )
-    return fig 
-"""
