@@ -126,9 +126,8 @@ def readEPW(file,year=None,alias=False,warns=True):
         datos=epw.readline().split(',')
     lat = float(datos[6])
     lon = float(datos[7])
-    tmz = 'Etc/GMT'+datos[8].split('.')[0]
     alt = float(datos[9])
-    
+    tmz = 'Etc/GMT'+"{0:+}".format(int(datos[8])*-1)
     
     names = ['Year',
              'Month',
