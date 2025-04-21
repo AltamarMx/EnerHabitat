@@ -2,12 +2,6 @@ version = 1
 revision = 1
 requires-python = ">=3.12"
 
-[manifest]
-members = [
-    "enerhabitat",
-    "test",
-]
-
 [[package]]
 name = "certifi"
 version = "2025.1.31"
@@ -54,7 +48,7 @@ wheels = [
 
 [[package]]
 name = "enerhabitat"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "pvlib" },
@@ -264,11 +258,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050 },
 ]
-
-[[package]]
-name = "test"
-version = "0.1.0"
-source = { virtual = "test" }
 
 [[package]]
 name = "tzdata"

@@ -1,4 +1,5 @@
 import pvlib
+import pytz
 
 from .ehtools import *
 
@@ -18,7 +19,9 @@ def calculateTsa(epw_file_path:str, convection_heat_transfer:float, solar_absort
     """
     
     epw, latitud, longitud, altitud, timezone = readEPW(epw_file_path,year,alias=True,warns=False)
-        
+    timezone=pytz.timezone('Etc/GMT'+timezone)
+    
+    
     dia = '15'
     mes = month
     año = year
