@@ -15,14 +15,14 @@ def temperature_model(df, Tmin, Tmax, Ho, Hi):
     Calcula la temperatura ambiente y agrega una columna 'Ta' al DataFrame.
 
     Parameters:
-    df (pd.DataFrame): DataFrame con la columna 'index' que representa los tiempos.
-    Tmin (float): Temperatura mínima.
-    Tmax (float): Temperatura máxima.
-    Ho (float): Hora de amanecer (en horas).
-    Hi (float): Hora de m'axima temperatura (en horas).
+        df (pd.DataFrame): DataFrame con la columna 'index' que representa los tiempos.
+        Tmin (float): Temperatura mínima.
+        Tmax (float): Temperatura máxima.
+        Ho (float): Hora de amanecer (en horas).
+        Hi (float): Hora de m'axima temperatura (en horas).
 
     Returns:
-    pd.DataFrame: DataFrame con una nueva columna 'Ta' que contiene la temperatura ambiente.
+        pd.DataFrame: DataFrame con una nueva columna 'Ta' que contiene la temperatura ambiente.
     """
     Ho_sec = Ho * 3600
     Hi_sec = Hi * 3600
@@ -114,11 +114,18 @@ def readEPW(file,year=None,alias=False,warns=True):
     """
     Read EPW file 
 
-    Arguments:
-    ----------
-    file -- path location of EPW file
-    year -- None default to leave intact the year or change if desired. It raises a warning.
-    alias -- False default, True to change to To, Ig, Ib, Ws, RH, ...
+    Args:
+        file : path location of EPW file
+        year : None default to leave intact the year or change if desired. It raises a warning.
+        alias : False default, True to change to To, Ig, Ib, Ws, RH, ...
+    
+    Return:
+        tuple: 
+            epw - DataFrame
+            latitud - float
+            longitud - float
+            altitud - float
+            timezone - int
     """
     
     datos=[]
@@ -203,8 +210,7 @@ def toEPW(file,df,epw_file):
     Save dataframe to EPW 
     
     Arguments:
-    ----------
-    file -- path location of EPW file
+        file : path location of EPW file
     """
   
     names = ['Year',

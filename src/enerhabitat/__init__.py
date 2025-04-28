@@ -5,17 +5,19 @@ from .ehtools import *
 
 def calculateTsa(epw_file_path:str, convection_heat_transfer:float, solar_absortance:float, inclination:float, azimuth:float, month:str, year:str):
     """
-    Calculate Tsa for a surface based on EPW file 
+    Calcula la temperatura sol/aire por segundo para el día promedio que experimenta una superficie basado en datos de un archivo EPW 
 
-    Arguments:
-    ----------
-    file -- path location of EPW file
-    ho -- 13.
-    solar_absortance -- Solar absortance for the material
-    inclination -- Inclination of the surface 90 - Vertical
-    azimuth -- 270
-    month -- Month of interest
-    year -- Year of interest
+    Args:
+        epw_file_path (str): Ruta del archivo EPW
+        convection_heat_transfer (float): Indice de transferencia de calor por convección del sistema (eg. 13)
+        solar_absortance (float): Absortancia del material externo del sistema
+        inclination (float): Inclinación de la superficie con respecto al suelo (90° == Vertical)
+        azimuth (float): Desviacion con respecto al norte (0° == Norte)
+        month (str): Mes de interés
+        year (str): Año de interés
+    
+    Return:
+        DataFrame : Predicción de la TSA por segundo para el día promedio del mes y año de interés
     """
     
     epw, latitud, longitud, altitud, timezone = readEPW(epw_file_path,year,alias=True,warns=False)
