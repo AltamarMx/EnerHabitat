@@ -7,14 +7,14 @@ authors = [
 ]
 description = "Paquete instalable para EnerHabitat"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 classifiers = [
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: Spanish",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Education :: Testing",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Topic :: Software Development :: Libraries :: Python Modules"
