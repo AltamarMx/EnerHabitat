@@ -16,7 +16,7 @@ def calculateTsa(epw_file_path:str, convection_heat_transfer:float, solar_absort
         month (str): Mes de interés
         year (str): Año de interés
     
-    Return:
+    Returns:
         DataFrame : Predicción de la TSA por segundo para el día promedio del mes y año de interés
     """
     
