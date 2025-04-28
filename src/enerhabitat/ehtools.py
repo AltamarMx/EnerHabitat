@@ -127,7 +127,7 @@ def readEPW(file,year=None,alias=False,warns=True):
     lat = float(datos[6])
     lon = float(datos[7])
     alt = float(datos[9])
-    tmz = datos[8].split('.')[0]
+    tmz = int(datos[8].split('.')[0])
     
     names = ['Year',
              'Month',

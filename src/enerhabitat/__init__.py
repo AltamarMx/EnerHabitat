@@ -19,7 +19,7 @@ def calculateTsa(epw_file_path:str, convection_heat_transfer:float, solar_absort
     """
     
     epw, latitud, longitud, altitud, timezone = readEPW(epw_file_path,year,alias=True,warns=False)
-    timezone=pytz.timezone('Etc/GMT{0:+}'.format(float(timezone)*-1))
+    timezone=pytz.timezone('Etc/GMT'+f'{(-timezone):+}')
     
     
     dia = '15'
