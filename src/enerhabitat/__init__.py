@@ -4,7 +4,8 @@ import pytz
 from datetime import datetime
 from .ehtools import *
 
-def calculateTsa(epw_file_path: str,
+def calculateTSA(
+    epw_file_path: str,
     solar_absortance: float,
     surface_tilt: float,
     surface_azimuth: float,
@@ -12,12 +13,12 @@ def calculateTsa(epw_file_path: str,
     day: str = "15",
     month: str = "current_month",
     year: str = "current_year",
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
-       Calculates the sun-air temperature per second for the average day experienced by a surface based on EPW file data.
+    Calculates the sun-air temperature per second for the average day experienced by a surface based on EPW file data.
 
     Args:
-        epw_file_path (str): Path to the EPW file.
+        epw_file_path (str): Path to the EPW file. 
         solar_absortance (float): Solar absorptance of the system's external material.
         surface_tilt (float): Surface tilt relative to the ground (90° == Vertical).
         surface_azimuth (float): Deviation from true north (0° == North).
@@ -94,3 +95,50 @@ def calculateTsa(epw_file_path: str,
 
     return dia
     
+def solveSC(
+    constructive_system:list,
+    TSA_dataframe:pd.DataFrame
+    )->pd.DataFrame:
+    """
+    Solves the constructive system inside temperature with the TSA simulation dataframe.
+    The constructive system material's properties and configuration are taken from the materials.ini and eh_config files respectively.
+
+    Args:
+        constructive_system (list): List of tuples with the material and width
+        TSA_dataframe (pd.DataFrame): Predicted sun-air temperature (TSA) per second for the average day DataFrame.
+
+    Returns:
+        pd.DataFrame: modified TSA_dataframe with the constructive system solution.
+    """
+    materiales = get_list_materials("materiales.ini")
+    propiedades = read_materials("materiales.ini")
+    eh_config = read_configuration("eh_config.ini")
+    
+    cs = set_construction(propiedades, constructive_system)
+    Ltotal  = get_total_L(cs)
+    
+    k, rhoc, dx = set_k_rhoc(cs, eh_config.Nx)
+
+    T = np.full(eh_config.Nx, TSA_dataframe.Tn.mean())
+    TSA_dataframe['Ti'] = TSA_dataframe.Tn.mean()
+    dt  = eh_config.dt
+    nx = eh_config.Nx 
+    ho = eh_config.ho
+    hi = eh_config.hi
+    La = eh_config.La
+    
+    TSA_dataframe = TSA_dataframe.iloc[::dt]
+    
+    C = 1
+    while C > 5e-4: 
+        Told = T.copy()
+        for tiempo, datos in TSA_dataframe.iterrows():
+            a,b,c,d = calculate_coefficients(dt, dx, k, nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
+            T, Ti = solve_PQ(a, b, c, d, T, nx, datos['Ti'], hi, La, dt)
+            TSA_dataframe.loc[tiempo,"Ti"] = Ti
+        Tnew = T.copy()
+        C = abs(Told - Tnew).mean()
+        FD   = (TSA_dataframe.Ti.max() - TSA_dataframe.Ti.min())/(TSA_dataframe.Ta.max()-TSA_dataframe.Ta.min())
+        FDsa = (TSA_dataframe.Ti.max() - TSA_dataframe.Ti.min())/(TSA_dataframe.Tsa.max()-TSA_dataframe.Tsa.min())
+    
+    return TSA_dataframe
