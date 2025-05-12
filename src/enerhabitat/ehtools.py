@@ -2,24 +2,90 @@ import pandas as pd
 import numpy as np
 import configparser
 import warnings
+import os
 import math
 from dateutil.parser import parse
 
 """
 =============================
-  Herramientas configuracion
+    Configuration tools
 =============================
 """
+_eh_config = "materials.ini"
 
-def get_list_materials(file):
+def init_materials(file):
+    
+    os.makedirs(os.path.dirname(file), exist_ok=True)
+    
+    example = configparser.ConfigParser()
+        
+    with open(file, 'w') as materials_file:
+        # Seccion de configuracion    
+        example["configuration"]={
+            "La" : "2.5",
+            "Nx" : "20",
+            "ho" : "13",
+            "hi" : "8.6",
+            "dt" : "60"}
+        
+        # Secciones de materiales
+        example["adobe"]={
+            "k"   : '0.58',
+            "rho" : "1500",
+            "c"   : "1480"}
+        example["brick"]={
+            "k"   : '0.7',
+            "rho" : "1970",
+            "c"   : "800"}
+        example["concrete"]={
+            "k"   : '1.35',
+            "rho" : "1800",
+            "c"   : "1000"}
+        example["steel"]={
+            "k"   : '65',
+            "rho" : "25000",
+            "c"   : "1000"}
+        
+        example.write(materials_file)
+    
+def materials(new_config_file=None):
+    """
+    Returns the path to the configuration file. If "new_config_file" is defined,
+    it modifies the established path. 
+    If the configuration file doesn't exist or isn't found in the specified location,
+    it is initialized with sample values. 
+
+    Args:
+        new_config_file (file, optional): Path of the configuration file to use.
+    
+    Returns:
+        str : Path to the active configuration file
+    """
+    global _eh_config
+    
+    # Determinar qué ruta usar
+    target_file = new_config_file if new_config_file is not None else _eh_config
+    
+    # Verificar si el archivo existe y crearlo si es necesario
+    if not os.path.isfile(target_file):
+        init_materials(target_file)
+    
+    # Actualizar la configuración global si se proporcionó una nueva ruta
+    if new_config_file is not None:
+        _eh_config = new_config_file
+    
+    return _eh_config
+
+def get_list_materials():
     config = configparser.ConfigParser()
-    config.read(file)
-    materials = config.sections()
-    return materials
+    config.read(materials())
+    materiales = config.sections()
+    materiales.remove("configuration")
+    return materiales
 
-def read_materials(archivo):
-    propiedades = configparser.ConfigParser()
-    propiedades.read(archivo)
+def read_materials():
+    data = configparser.ConfigParser()
+    data.read(materials())
 
     class Material:
         def __init__(self, k, rho, c):
@@ -28,21 +94,22 @@ def read_materials(archivo):
             self.c = c
 
     materiales = {}
-    for seccion in propiedades.sections():
-        k = float(propiedades[seccion]['k'])
-        rho = float(propiedades[seccion]['rho'])
-        c = float(propiedades[seccion]['c'])
-        materiales[seccion] = Material(k, rho, c)
+    for material_i in data.sections():
+        if material_i == "configuration": 
+            continue  # Skips configuration section
+        k = float(data[material_i]['k'])
+        rho = float(data[material_i]['rho'])
+        c = float(data[material_i]['c'])
+        materiales[material_i] = Material(k, rho, c)
     
     return materiales
 
-def read_configuration(file):
-    values = configparser.ConfigParser()
-    values.read(file)
-
+def read_configuration():
+    data = configparser.ConfigParser()
+    data.read(materials())
+    
     class Configuration:
-        def __init__(self, La, Nx,ho,hi,dt):
-            # self.dt = dt
+        def __init__(self, La, Nx, ho, hi, dt):
             self.La = La
             self.Nx = Nx
             self.ho = ho
@@ -50,20 +117,19 @@ def read_configuration(file):
             self.dt = dt
 
     section = 'configuration'
-    # dt = float(values[section]['dt'])
-    La = float(values[section]['La'])
-    Nx = int(values[section]['Nx'])
-    ho = float(values[section]['ho'])
-    hi = float(values[section]['hi'])
-    dt = int(values[section]['dt'])
+    La = float(data[section]['La'])
+    Nx = int(data[section]['Nx'])
+    ho = float(data[section]['ho'])
+    hi = float(data[section]['hi'])
+    dt = int(data[section]['dt'])
 
-    configuration = Configuration( La, Nx,ho,hi,dt)
+    configuration = Configuration(La, Nx, ho, hi, dt)
     
     return configuration
 
 """
 =============================
-  Herramientas calculateTSA
+        Tsa tools
 =============================
 """
 
@@ -264,7 +330,7 @@ def readEPW(file,year=None,alias=False,warns=True):
 
 def toEPW(file,df,epw_file):
     """
-    Save dataframe to EPW 
+    Save dataframe to EPW (no probada)
     
     Arguments:
         file : path location of EPW file
@@ -339,7 +405,7 @@ def toEPW(file,df,epw_file):
 
 """
 =============================
-  Herramientas 
+        solveCS tools
 =============================
 """
 
@@ -372,14 +438,14 @@ def set_k_rhoc(cs, nx):
     Calcula los arreglos de conductividad y el producto de calor específico y densidad
     para cada volumen de control, y también calcula el tamaño de cada volumen de control (dx).
     
-    Parameters:
-    cs (dict): Diccionario con la configuración del sistema constructivo.
-    nx (int): Número de elementos de discretización.
+    Args:
+        cs (dict): Diccionario con la configuración del sistema constructivo.
+        nx (int): Número de elementos de discretización.
     
     Returns:
-    tuple: (k_array, rhoc_array, dx), donde k_array es el arreglo de conductividad,
-           rhoc_array es el arreglo del producto de calor específico y densidad,
-           y dx es el tamaño de cada volumen de control.
+        tuple : [ k_array, rhoc_array, dx ] donde k_array es el arreglo de conductividad,
+        rhoc_array es el arreglo del producto de calor específico y densidad,
+        y dx es el tamaño de cada volumen de control.
     """
     L_total = get_total_L(cs)
     dx = L_total / nx
