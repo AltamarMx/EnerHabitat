@@ -1,12 +1,135 @@
 import pandas as pd
 import numpy as np
+import configparser
 import warnings
+import os
 import math
 from dateutil.parser import parse
 
 """
 =============================
-        Herramientas
+    Configuration tools
+=============================
+"""
+_eh_config = "materials.ini"
+
+def init_materials(file):
+    
+    os.makedirs(os.path.dirname(file), exist_ok=True)
+    
+    example = configparser.ConfigParser()
+        
+    with open(file, 'w') as materials_file:
+        # Seccion de configuracion    
+        example["configuration"]={
+            "La" : "2.5",
+            "Nx" : "20",
+            "ho" : "13",
+            "hi" : "8.6",
+            "dt" : "60"}
+        
+        # Secciones de materiales
+        example["adobe"]={
+            "k"   : '0.58',
+            "rho" : "1500",
+            "c"   : "1480"}
+        example["brick"]={
+            "k"   : '0.7',
+            "rho" : "1970",
+            "c"   : "800"}
+        example["concrete"]={
+            "k"   : '1.35',
+            "rho" : "1800",
+            "c"   : "1000"}
+        example["steel"]={
+            "k"   : '65',
+            "rho" : "25000",
+            "c"   : "1000"}
+        
+        example.write(materials_file)
+    
+def materials(new_config_file=None):
+    """
+    Returns the path to the configuration file. If "new_config_file" is defined,
+    it modifies the established path. 
+    If the configuration file doesn't exist or isn't found in the specified location,
+    it is initialized with sample values. 
+
+    Args:
+        new_config_file (file, optional): Path of the configuration file to use.
+    
+    Returns:
+        str : Path to the active configuration file
+    """
+    global _eh_config
+    
+    # Determinar qué ruta usar
+    target_file = new_config_file if new_config_file is not None else _eh_config
+    
+    # Verificar si el archivo existe y crearlo si es necesario
+    if not os.path.isfile(target_file):
+        init_materials(target_file)
+    
+    # Actualizar la configuración global si se proporcionó una nueva ruta
+    if new_config_file is not None:
+        _eh_config = new_config_file
+    
+    return _eh_config
+
+def get_list_materials():
+    config = configparser.ConfigParser()
+    config.read(materials())
+    materiales = config.sections()
+    materiales.remove("configuration")
+    return materiales
+
+def read_materials():
+    data = configparser.ConfigParser()
+    data.read(materials())
+
+    class Material:
+        def __init__(self, k, rho, c):
+            self.k = k
+            self.rho = rho
+            self.c = c
+
+    materiales = {}
+    for material_i in data.sections():
+        if material_i == "configuration": 
+            continue  # Skips configuration section
+        k = float(data[material_i]['k'])
+        rho = float(data[material_i]['rho'])
+        c = float(data[material_i]['c'])
+        materiales[material_i] = Material(k, rho, c)
+    
+    return materiales
+
+def read_configuration():
+    data = configparser.ConfigParser()
+    data.read(materials())
+    
+    class Configuration:
+        def __init__(self, La, Nx, ho, hi, dt):
+            self.La = La
+            self.Nx = Nx
+            self.ho = ho
+            self.hi = hi
+            self.dt = dt
+
+    section = 'configuration'
+    La = float(data[section]['La'])
+    Nx = int(data[section]['Nx'])
+    ho = float(data[section]['ho'])
+    hi = float(data[section]['hi'])
+    dt = int(data[section]['dt'])
+
+    configuration = Configuration(La, Nx, ho, hi, dt)
+    
+    return configuration
+
+"""
+=============================
+        Tsa tools
 =============================
 """
 
@@ -207,7 +330,7 @@ def readEPW(file,year=None,alias=False,warns=True):
 
 def toEPW(file,df,epw_file):
     """
-    Save dataframe to EPW 
+    Save dataframe to EPW (no probada)
     
     Arguments:
         file : path location of EPW file
@@ -279,3 +402,176 @@ def toEPW(file,df,epw_file):
     
     with open(file, 'w') as f:
         f.write(epw)
+
+"""
+=============================
+        solveCS tools
+=============================
+"""
+
+def set_construction(propiedades,tuplas):
+    """
+    Actualiza el diccionario cs con los valores de L y las propiedades del material proporcionados en las tuplas.
+    
+    Parameters:
+    propiedades (dict): Diccionario con las propiedades de los materiales.
+    tuplas (list): Lista de tuplas, donde cada tupla contiene el valor de L y el nombre del material.
+    
+    Returns:
+    dict: Diccionario actualizado cs.
+    """
+    cs ={}
+    for i, (L, material) in enumerate(tuplas, start=1):
+        capa = f"L{i}"
+        cs[capa] = {
+            "L": L,
+            "material": propiedades[material]
+        }
+    return cs
+
+def get_total_L(cs):
+    L_total = sum([cs[L]["L"] for L in cs.keys()])
+    return L_total
+
+def set_k_rhoc(cs, nx):
+    """
+    Calcula los arreglos de conductividad y el producto de calor específico y densidad
+    para cada volumen de control, y también calcula el tamaño de cada volumen de control (dx).
+    
+    Args:
+        cs (dict): Diccionario con la configuración del sistema constructivo.
+        nx (int): Número de elementos de discretización.
+    
+    Returns:
+        tuple : [ k_array, rhoc_array, dx ] donde k_array es el arreglo de conductividad,
+        rhoc_array es el arreglo del producto de calor específico y densidad,
+        y dx es el tamaño de cada volumen de control.
+    """
+    L_total = get_total_L(cs)
+    dx = L_total / nx
+
+    k_array = np.zeros(nx)
+    rhoc_array = np.zeros(nx)
+
+    # Inicializar la posición actual en el arreglo
+    i = 0
+
+    for L in cs.keys():
+        L_value = cs[L]['L']
+        k_value = cs[L]['material'].k
+        rhoc_value = cs[L]['material'].rho * cs[L]['material'].c
+
+        num_elements = int(L_value / dx)
+        
+        for j in range(num_elements):
+            if i >= nx:
+                break
+            k_array[i] = k_value
+            rhoc_array[i] = rhoc_value
+            i += 1
+
+        # Considerar promedio armónico solo con el primer vecino
+        if i < nx and i > 0:
+            k_array[i] = 2 * (k_array[i-1] * k_value) / (k_array[i-1] + k_value)
+            rhoc_array[i] = rhoc_value
+            i += 1
+
+    return k_array, rhoc_array, dx
+
+def calculate_coefficients(dt, dx, k, nx, rhoc, T, To, ho, Ti, hi):
+    """
+    Calcula los coeficientes a, b, c y d para el sistema de ecuaciones.
+
+    Parameters:
+    dt (float): Paso temporal.
+    dx (float): Tamaño de cada volumen de control.
+    k (numpy.ndarray): Arreglo de conductividades.
+    nx (int): Número de elementos de discretización.
+    rhoc (numpy.ndarray): Arreglo del producto de densidad y calor específico.
+    T (numpy.ndarray): Arreglo de temperaturas.
+    To (float): Temperatura en el exterior.
+    ho (float): Coeficiente convectivo en el exterior.
+    Ti (float): Temperatura en el interior.
+    hi (float): Coeficiente convectivo en el interior.
+
+    Returns:
+    tuple: (a, b, c, d) arreglos de coeficientes.
+    """
+    a = np.zeros(nx)
+    b = np.zeros(nx)
+    c = np.zeros(nx)
+    d = np.zeros(nx)
+
+    # Calcular coeficientes en el primer nodo
+    b[0] = (2.0 * k[0] * k[1]) / (k[0] + k[1]) / dx
+    c[0] = 0.0
+    d[0] = rhoc[0] * dx / dt * T[0] + ho * To
+    a[0] = rhoc[0] * dx / dt + ho + b[0]
+    
+    # Calcular coeficientes en los nodos intermedios
+    for i in range(1, nx -1):
+        b[i] = (2.0 * k[i] * k[i + 1]) / (k[i] + k[i + 1]) / dx
+        c[i] = (2.0 * k[i - 1] * k[i]) / (k[i] + k[i - 1]) / dx
+        d[i] = rhoc[i] * dx / dt * T[i]
+        a[i] = rhoc[i] * dx / dt + b[i] + c[i]
+    
+    # Calcular coeficientes en el último nodo
+    i = nx - 1
+    b[i] = 0.0
+    c[i] = (2.0 * k[i - 1] * k[i]) / (k[i] + k[i - 1]) / dx
+    d[i] = rhoc[i] * dx / dt * T[i] + hi * Ti
+    a[i] = rhoc[i] * dx / dt + c[i] + hi
+
+    return a, b, c, d
+
+def solve_PQ(a, b, c, d, T, nx, Tint, hi, La, dt):
+    """
+    Resuelve el sistema de ecuaciones usando el método TDMA y actualiza las temperaturas para el siguiente paso temporal.
+
+    Parameters:
+    a (numpy.ndarray): Arreglo de coeficientes a.
+    b (numpy.ndarray): Arreglo de coeficientes b.
+    c (numpy.ndarray): Arreglo de coeficientes c.
+    d (numpy.ndarray): Arreglo de coeficientes d.
+    T (numpy.ndarray): Arreglo de temperaturas.
+    nx (int): Número de elementos de discretización.
+    Tint (float): Temperatura interna.
+    hi (float): Coeficiente convectivo interno.
+    rhoair (float): Densidad del aire.
+    cair (float): Calor específico del aire.
+    La (float): Parámetro adicional (longitud, área, etc.).
+    dt (float): Paso temporal.
+    Qin (float): Calor interno.
+    Tintaverage (float): Temperatura interna promedio.
+    Ein (float): Energía interna.
+
+    Returns:
+    tuple: (T, Tint, Qin, Tintaverage, Ein) arreglos de temperaturas y parámetros actualizados.
+    """
+    
+    rhoair  = 1.1797660470258469
+    cair    = 1005.458757
+    P = np.zeros(nx)
+    Q = np.zeros(nx)
+    Tn = np.zeros(nx)
+    
+    # Inicializar P y Q
+    P[0] = b[0] / a[0]
+    Q[0] = d[0] / a[0]
+
+    for i in range(1, nx):
+        P[i] = b[i] / (a[i] - c[i] * P[i - 1])
+        Q[i] = (d[i] + c[i] * Q[i - 1]) / (a[i] - c[i] * P[i - 1])
+
+    Tn[nx - 1] = Q[nx - 1]
+    for i in range(nx - 2, -1, -1):
+        Tn[i] = P[i] * Tn[i + 1] + Q[i]
+
+    T[:] = Tn
+
+    # Actualizar Tint, Tintaverage, Qin y Ein
+    Tinn = Tint
+    Tint += hi * dt / (rhoair * cair * La) * (T[nx - 1] - Tinn)
+
+    return T, Tint
+

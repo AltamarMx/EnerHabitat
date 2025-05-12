@@ -1,9 +1,9 @@
 [project]
 name = "enerhabitat"
-version = "0.1.4"
+version = "0.1.6"
 authors = [
-    {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"},
-    {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"}
+    {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"},
+    {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"}
 ]
 description = "Paquete instalable para EnerHabitat"
 readme = "README.md"
