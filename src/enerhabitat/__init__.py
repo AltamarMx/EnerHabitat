@@ -4,6 +4,12 @@ import pytz
 from datetime import datetime
 from .ehtools import *
 
+La = 2.5
+Nx = 20
+ho = 13     # Outside convection heat transfer
+hi = 8.6    # Inside convection heat transfer
+dt = 60
+
 def Tsa(
     epw_file,
     solar_absortance: float,
@@ -28,9 +34,8 @@ def Tsa(
     Returns:
         pd.DataFrame: Predicted sun-air temperature (TSA) per second for the average day of the specified month and year.
     """
-
-    eh_config = read_configuration()
-    convection_heat_transfer = eh_config.ho
+    global ho
+    outside_convection_heat_transfer = ho
     
     if month == "current_month": month = datetime.now().month
     if year == "current_year": year = datetime.now().year
@@ -77,7 +82,7 @@ def Tsa(
     dia_promedio['Is'] = total_irradiance.poa_global
     
     # Add Tsa, DeltaTn
-    dia_promedio['Tsa'] = dia_promedio.Ta + dia_promedio.Is*solar_absortance/convection_heat_transfer - LWR
+    dia_promedio['Tsa'] = dia_promedio.Ta + dia_promedio.Is*solar_absortance/outside_convection_heat_transfer - LWR
     DeltaTa= dia_promedio.Ta.max() - dia_promedio.Ta.min()
 
     dia_promedio['DeltaTn'] = calculate_DtaTn(DeltaTa)
@@ -107,22 +112,20 @@ def solveCS(
         pd.DataFrame: modified Tsa_dataframe with the constructive system solution.
     """
     
-    materiales = get_list_materials()
+    global La 
+    global Nx     
+    global ho     # Outside convection heat transfer
+    global hi     # Inside convection heat transfer
+    global dt  
+       
     propiedades = read_materials()
-    eh_config = read_configuration()
     
     cs = set_construction(propiedades, constructive_system)
-    Ltotal  = get_total_L(cs)
     
-    k, rhoc, dx = set_k_rhoc(cs, eh_config.Nx)
+    k, rhoc, dx = set_k_rhoc(cs, Nx)
 
-    T = np.full(eh_config.Nx, Tsa_dataframe.Tn.mean())
+    T = np.full(Nx, Tsa_dataframe.Tn.mean())
     Tsa_dataframe['Ti'] = Tsa_dataframe.Tn.mean()
-    dt  = eh_config.dt
-    nx = eh_config.Nx 
-    ho = eh_config.ho
-    hi = eh_config.hi
-    La = eh_config.La
     
     Tsa_dataframe = Tsa_dataframe.iloc[::dt]
     
@@ -130,8 +133,8 @@ def solveCS(
     while C > 5e-4: 
         Told = T.copy()
         for tiempo, datos in Tsa_dataframe.iterrows():
-            a,b,c,d = calculate_coefficients(dt, dx, k, nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
-            T, Ti = solve_PQ(a, b, c, d, T, nx, datos['Ti'], hi, La, dt)
+            a,b,c,d = calculate_coefficients(dt, dx, k, Nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
+            T, Ti = solve_PQ(a, b, c, d, T, Nx, datos['Ti'], hi, La, dt)
             Tsa_dataframe.loc[tiempo,"Ti"] = Ti
         Tnew = T.copy()
         C = abs(Told - Tnew).mean()

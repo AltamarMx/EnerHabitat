@@ -13,47 +13,10 @@ from dateutil.parser import parse
 """
 _eh_config = "materials.ini"
 
-def init_materials(file):
-    
-    os.makedirs(os.path.dirname(file), exist_ok=True)
-    
-    example = configparser.ConfigParser()
-        
-    with open(file, 'w') as materials_file:
-        # Seccion de configuracion    
-        example["configuration"]={
-            "La" : "2.5",
-            "Nx" : "20",
-            "ho" : "13",
-            "hi" : "8.6",
-            "dt" : "60"}
-        
-        # Secciones de materiales
-        example["adobe"]={
-            "k"   : '0.58',
-            "rho" : "1500",
-            "c"   : "1480"}
-        example["brick"]={
-            "k"   : '0.7',
-            "rho" : "1970",
-            "c"   : "800"}
-        example["concrete"]={
-            "k"   : '1.35',
-            "rho" : "1800",
-            "c"   : "1000"}
-        example["steel"]={
-            "k"   : '65',
-            "rho" : "25000",
-            "c"   : "1000"}
-        
-        example.write(materials_file)
-    
 def materials(new_config_file=None):
     """
     Returns the path to the configuration file. If "new_config_file" is defined,
     it modifies the established path. 
-    If the configuration file doesn't exist or isn't found in the specified location,
-    it is initialized with sample values. 
 
     Args:
         new_config_file (file, optional): Path of the configuration file to use.
@@ -66,15 +29,18 @@ def materials(new_config_file=None):
     # Determinar qué ruta usar
     target_file = new_config_file if new_config_file is not None else _eh_config
     
-    # Verificar si el archivo existe y crearlo si es necesario
-    if not os.path.isfile(target_file):
-        init_materials(target_file)
-    
-    # Actualizar la configuración global si se proporcionó una nueva ruta
-    if new_config_file is not None:
-        _eh_config = new_config_file
-    
-    return _eh_config
+    try:    
+        # Verificar si el archivo existe y crearlo si es necesario
+        if not os.path.isfile(target_file):
+            raise FileNotFoundError("f{target_file} not found")
+        
+        # Actualizar la configuración global si se proporcionó una nueva ruta
+        if new_config_file is not None:
+            _eh_config = new_config_file
+        
+        return _eh_config
+    except FileNotFoundError:
+        print(f"Error: {target_file} not found")        
 
 def get_list_materials():
     config = configparser.ConfigParser()
@@ -103,29 +69,6 @@ def read_materials():
         materiales[material_i] = Material(k, rho, c)
     
     return materiales
-
-def read_configuration():
-    data = configparser.ConfigParser()
-    data.read(materials())
-    
-    class Configuration:
-        def __init__(self, La, Nx, ho, hi, dt):
-            self.La = La
-            self.Nx = Nx
-            self.ho = ho
-            self.hi = hi
-            self.dt = dt
-
-    section = 'configuration'
-    La = float(data[section]['La'])
-    Nx = int(data[section]['Nx'])
-    ho = float(data[section]['ho'])
-    hi = float(data[section]['hi'])
-    dt = int(data[section]['dt'])
-
-    configuration = Configuration(La, Nx, ho, hi, dt)
-    
-    return configuration
 
 """
 =============================
