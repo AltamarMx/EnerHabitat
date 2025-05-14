@@ -46,7 +46,6 @@ def get_list_materials():
     config = configparser.ConfigParser()
     config.read(materials())
     materiales = config.sections()
-    materiales.remove("configuration")
     return materiales
 
 def read_materials():
@@ -61,8 +60,6 @@ def read_materials():
 
     materiales = {}
     for material_i in data.sections():
-        if material_i == "configuration": 
-            continue  # Skips configuration section
         k = float(data[material_i]['k'])
         rho = float(data[material_i]['rho'])
         c = float(data[material_i]['c'])
