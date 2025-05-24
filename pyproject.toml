@@ -1,6 +1,6 @@
 [project]
 name = "enerhabitat"
-version = "0.1.7"
+version = "0.1.8"
 authors = [
     {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"},
     {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"}
@@ -22,6 +22,7 @@ classifiers = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
+    "numba>=0.60.0",
     "pvlib>=0.12.0",
 ]
 
