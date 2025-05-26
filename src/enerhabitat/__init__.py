@@ -10,7 +10,6 @@ ho = 13     # Outside convection heat transfer
 hi = 8.6    # Inside convection heat transfer
 dt = 60
 
-@njit
 def meanDay(
     epw_file : str,
     day = "15",
@@ -57,7 +56,7 @@ def meanDay(
     dia_promedio = add_temperature_model(dia_promedio, Tmin, Tmax, sunrise, tTmax)
     
     # Add Ig, Ib, Id y Tn a dia_promedio 
-    dia_promedio = add_IgIbId_Tn(dia_promedio, month, f1, f2, timezone)
+    dia_promedio = add_IgIbId_Tn(dia_promedio, epw, month, f1, f2, timezone)
     
     # Add DeltaTn
     DeltaTa= dia_promedio.Ta.max() - dia_promedio.Ta.min()
@@ -65,7 +64,6 @@ def meanDay(
     
     return dia_promedio
 
-@njit
 def Tsa(
     meanDay_dataframe:pd.DataFrame,
     solar_absortance: float,
@@ -112,8 +110,7 @@ def Tsa(
     meanDay_dataframe['Tsa'] = meanDay_dataframe.Ta + meanDay_dataframe.Is*solar_absortance/outside_convection_heat_transfer - LWR
        
     return meanDay_dataframe
-
-@njit    
+  
 def solveCS(
     constructive_system:list,
     Tsa_dataframe:pd.DataFrame,
@@ -155,7 +152,7 @@ def solveCS(
             Tsa_dataframe.loc[tiempo,"Ti"] = Ti
         Tnew = T.copy()
         C = abs(Told - Tnew).mean()
-        FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
-        FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
+    #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
+    #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
     
     return Tsa_dataframe

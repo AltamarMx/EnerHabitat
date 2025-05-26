@@ -55,7 +55,6 @@ def get_list_materials():
     materiales = config.sections()
     return materiales
 
-@njit
 def read_materials():
     """
     returns a dictionary with the list of materials and their properties
@@ -87,7 +86,6 @@ def read_materials():
 =============================
 """
 
-@njit
 def add_temperature_model(df, Tmin, Tmax, Ho, Hi):
     """
     Calcula la temperatura ambiente y agrega una columna 'Ta' al DataFrame.
@@ -121,7 +119,6 @@ def add_temperature_model(df, Tmin, Tmax, Ho, Hi):
     df['Ta'] = Ta
     return df
 
-@njit
 def calculate_tTmaxTminTmax(mes, epw):
     epw_mes = epw.loc[epw.index.month==int(mes)]
     hora_minutos = epw_mes.resample('D').To.idxmax()
@@ -133,20 +130,19 @@ def calculate_tTmaxTminTmax(mes, epw):
     
     return tTmax,Tmin,Tmax
 
-@njit
-def add_IgIbId_Tn(epw, mes, f1, f2, timezone):
+def add_IgIbId_Tn(df, epw, mes, f1, f2, timezone):
     epw_mes = epw.loc[epw.index.month==int(mes)]
     Irr = epw_mes.groupby(by=epw_mes.index.hour)[['Ig','Id','Ib']].mean()
     tiempo = pd.date_range(start=f1, end=parse(f2), freq='1h',tz=timezone)
     Irr.index = tiempo
     Irr = Irr.resample('1s').interpolate(method='time')
-    # df['Ig'] = Irr.Ig
-    # df['Ib'] = Irr.Ib
-    # df['Id'] = Irr.Id
-    Irr.ffill(inplace=True)
-    Irr['Tn'] = 13.5 + 0.54*epw.Ta.mean()
+    df['Ig'] = Irr.Ig
+    df['Ib'] = Irr.Ib
+    df['Id'] = Irr.Id
+    df.ffill(inplace=True)
+    df['Tn'] = 13.5 + 0.54*df.Ta.mean()
     
-    return Irr
+    return df
 
 @njit
 def calculate_DtaTn(Delta):
@@ -289,7 +285,6 @@ def readEPW(file,year=None,alias=False,warns=True):
 =============================
 """
 
-@njit
 def set_construction(propiedades, tuplas):
     """
     Actualiza el diccionario cs con  las propiedades del material y los valores de L proporcionados en las tuplas.
@@ -310,12 +305,10 @@ def set_construction(propiedades, tuplas):
         }
     return cs
 
-@njit
 def get_total_L(cs):
     L_total = sum([cs[L]["L"] for L in cs.keys()])
     return L_total
 
-@njit
 def set_k_rhoc(cs, nx):
     """
     Calcula los arreglos de conductividad y el producto de calor específico y densidad
