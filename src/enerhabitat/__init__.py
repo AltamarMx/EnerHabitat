@@ -27,7 +27,7 @@ def meanDay(
         year (str, optional): Year of interest. Defaults to current year.
 
     Returns:
-        DataFrame: Predicted ambient temperature ( Ta ), global ( Ig ), direct ( Ib ) 
+        DataFrame: Predicted ambient temperature ( Ta ), global ( Ig ), beam ( Ib ) 
         and diffuse irradiance ( Id ) per second for the average day of the specified month and year.
     """
     
@@ -119,11 +119,11 @@ def solveCS(
     Tsa_dataframe:pd.DataFrame,
     )->pd.DataFrame:
     """
-    Solves the constructive system's inside temperature with the TSA simulation dataframe.
+    Solves the constructive system's inside temperature with the Tsa simulation dataframe.
 
     Args:
         constructive_system (list): list of tuples from outside to inside with material and width.
-        Tsa_dataframe (DataFrame): Predicted sun-air temperature ( TSA ) per second for the average day DataFrame.
+        Tsa_dataframe (DataFrame): Predicted sun-air temperature ( Tsa ) per second for the average day DataFrame.
         
     Returns:
         DataFrame: Interior temperature ( Ti ) for the constructive system.
