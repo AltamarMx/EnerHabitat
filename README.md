@@ -8,12 +8,12 @@
   - [Getting started](#getting-started)
     - [Installation](#installation)
     - [Folder structure](#folder-structure)
-    - [Main functions](#main-functions)
-      - [meanDay](#meanday)
-      - [Tsa](#tsa)
-      - [solveCS](#solvecs)
-    - [Materials](#materials)
-    - [Other parameters](#other-parameters)
+  - [Main functions](#main-functions)
+    - [meanDay](#meanday)
+    - [Tsa](#tsa)
+    - [solveCS](#solvecs)
+  - [Materials](#materials)
+  - [Other parameters](#other-parameters)
   - [Dependencies](#dependencies)
   - [License](#license)
 
@@ -32,13 +32,13 @@
 
 The source code is currently hosted on GitHub at [eh_development](https://github.com/AltamarMx/eh_development)
 
-Binary installers for the latest released version are available at the Test Python Package Index ( [TestPyPI](https://test.pypi.org/project/enerhabitat) ).
+Binary installers for the latest released version are available at the Test Python Package Index [TestPyPI](https://test.pypi.org/project/enerhabitat) 
 
 ```bash
 pip install -i https://test.pypi.org/simple/ enerhabitat
 ```
 
-If you're working with the [uv](https://docs.astral.sh/uv/) Python package manager you can use the following.
+If you're working with the [uv](https://docs.astral.sh/uv/) Python package manager you can use the following
 
 ```bash
 $ uv pip install --index-url https://test.pypi.org/simple/ enerhabitat
@@ -46,7 +46,7 @@ $ uv pip install --index-url https://test.pypi.org/simple/ enerhabitat
 
 ### Folder structure
 
-The following shows basic folder structure.
+The following shows basic folder structure
 ```
 ├── main.py
 ├── materials.ini   # Materials properties
@@ -55,9 +55,9 @@ The following shows basic folder structure.
     └── example_file.epw
 ```
 
-### Main functions
-#### meanDay
-Calculates the ambient temperature, global, beam and diffuse irradiance per second for the average day based on EPW file.
+## Main functions
+### meanDay
+Calculates the ambient temperature, global, beam and diffuse irradiance per second for the average day based on EPW file
 ```python
 import enerhabitat as eh
 
@@ -70,9 +70,9 @@ time | zenith | elevation | azimuth | equation_of_time | Ta | Ig | Ib | Id |Tn |
 :---: | :---: | :---: | :---: | :---: |:---: | :---: | :---: | :---: | :---: | :---:
  ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ...
 
-#### Tsa
+### Tsa
 
-Calculates the sun-air temperature and solar irradiance per second for the average day.
+Calculates the sun-air temperature and solar irradiance per second for the average day
 
 ```python
 import enerhabitat as eh
@@ -86,8 +86,8 @@ sun_air = eh.Tsa(
 
 ```
 
-#### solveCS
-Solves the constructive system's inside temperature for a Tsa simulation dataframe.
+### solveCS
+Solves the constructive system's inside temperature for a Tsa simulation dataframe
 
 ```python
 import enerhabitat as eh
@@ -105,12 +105,45 @@ interior = eh.solveCS(
 
 ```
 
-### Materials
+## Materials
 
+The materials and their properties are specified in the `materials.ini` configuration file, specifying the material name as the `key` and its values ​​for `k`, `rho` and `c`
 
+```ini
+[concrete]
+k   = 1.35  # Overall heat transfer coefficient
+rho = 1800  # Density
+c   = 1000  # Specific heat
 
-### Other parameters
+[adobe]
+k   = 0.58
+rho = 1500
+c   = 1480
+```
 
+To set a configuration file, use the `materials()` function and specify the `path`
+
+```python
+import enerhabitat as eh
+
+eh.materials("./config/new_materials.ini")
+```
+```shell
+>>> "./config/new_materials.ini"
+```
+
+## Other parameters
+You can set various configuration values ​​to modify the behavior of the calculations
+
+```python
+import enerhabitat as eh
+
+eh.La = 2.5
+eh.Nx = 20     # Number of elements to discretize
+eh.ho = 13     # Outside convection heat transfer
+eh.hi = 8.6    # Inside convection heat transfer
+eh.dt = 60
+```
 
 ## Dependencies
 - [numba](https://numba.pydata.org/)

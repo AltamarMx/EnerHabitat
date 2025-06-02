@@ -31,7 +31,7 @@ def materials(new_config_file=None):
     target_file = new_config_file if new_config_file is not None else _eh_config
     
     try:    
-        # Verificar si el archivo existe y crearlo si es necesario
+        # Verificar si el archivo existe
         if not os.path.isfile(target_file):
             raise FileNotFoundError("f{target_file} not found")
         
@@ -39,9 +39,10 @@ def materials(new_config_file=None):
         if new_config_file is not None:
             _eh_config = new_config_file
         
-        return _eh_config
     except FileNotFoundError:
-        print(f"Error: {target_file} not found")        
+        print(f"Error: {target_file} not found")
+    finally:
+        return _eh_config      
 
 def get_list_materials():
     """
@@ -406,22 +407,19 @@ def solve_PQ(a, b, c, d, T, nx, Tint, hi, La, dt):
     """
     Resuelve el sistema de ecuaciones usando el método TDMA y actualiza las temperaturas para el siguiente paso temporal.
 
-    Parameters:
-    a (numpy.ndarray): Arreglo de coeficientes a.
-    b (numpy.ndarray): Arreglo de coeficientes b.
-    c (numpy.ndarray): Arreglo de coeficientes c.
-    d (numpy.ndarray): Arreglo de coeficientes d.
-    T (numpy.ndarray): Arreglo de temperaturas.
-    nx (int): Número de elementos de discretización.
-    Tint (float): Temperatura interna.
-    hi (float): Coeficiente convectivo interno.
-    rhoair (float): Densidad del aire.
-    cair (float): Calor específico del aire.
-    La (float): Parámetro adicional (longitud, área, etc.).
-    dt (float): Paso temporal.
-    Qin (float): Calor interno.
-    Tintaverage (float): Temperatura interna promedio.
-    Ein (float): Energía interna.
+    Args:
+        a (numpy.ndarray): Arreglo de coeficientes a.
+        b (numpy.ndarray): Arreglo de coeficientes b.
+        c (numpy.ndarray): Arreglo de coeficientes c.
+        d (numpy.ndarray): Arreglo de coeficientes d.
+        T (numpy.ndarray): Arreglo de temperaturas.
+        nx (int): Número de elementos de discretización.
+        Tint (float): Temperatura interna.
+        hi (float): Coeficiente convectivo interno.
+        rhoair (float): Densidad del aire.
+        cair (float): Calor específico del aire.
+        La (float): Parámetro adicional (longitud, área, etc.).
+        dt (float): Paso temporal.
 
     Returns:
     tuple: (T, Tint, Qin, Tintaverage, Ein) arreglos de temperaturas y parámetros actualizados.
