@@ -3,8 +3,6 @@
 
 ## Table of contents
 - [EnerHabitat](#enerhabitat)
-    - [Tools for evaluating the thermal performance of structures based on EPW files](#tools-for-evaluating-the-thermal-performance-of-structures-based-on-epw-files)
-  - [Table of contents](#table-of-contents)
   - [Getting started](#getting-started)
     - [Installation](#installation)
     - [Folder structure](#folder-structure)
