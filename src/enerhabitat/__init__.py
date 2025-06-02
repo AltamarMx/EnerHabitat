@@ -5,45 +5,33 @@ from datetime import datetime
 from .ehtools import *
 
 La = 2.5
-Nx = 20
+Nx = 20     # Number of elements to discretize
 ho = 13     # Outside convection heat transfer
 hi = 8.6    # Inside convection heat transfer
 dt = 60
 
-def Tsa(
-    epw_file,
-    solar_absortance: float,
-    surface_tilt: float,
-    surface_azimuth: float,
+def meanDay(
+    epw_file : str,
     day = "15",
     month = "current_month",
     year = "current_year"
-    ) -> pd.DataFrame: 
+    ) -> pd.DataFrame:
     """
-    Calculates the sun-air temperature per second for the average day experienced by a surface based on EPW file data.
+    Calculates the ambient temperature per second for the average day based on EPW file data.
     
     Args:
         epw_file (str): Path to the EPW file. 
-        solar_absortance (float): Solar absortance of the system's external material.
-        surface_tilt (float): Surface tilt relative to the ground, 90° == Vertical.
-        surface_azimuth (float): Deviation from true north, 0° == North.
-        day (str, optional): Day of interest. Defaults to "15".
-        month (str, optional): Month of interest. Defaults to "current_month".
-        year (str, optional): Year of interest. Defaults to "current_year".
+        day (str, optional): Day of interest. Defaults to 15.
+        month (str, optional): Month of interest. Defaults to current month.
+        year (str, optional): Year of interest. Defaults to current year.
 
     Returns:
-        pd.DataFrame: Predicted sun-air temperature (TSA) per second for the average day of the specified month and year.
+        DataFrame: Predicted ambient temperature ( Ta ), global ( Ig ), beam ( Ib ) 
+        and diffuse irradiance ( Id ) per second for the average day of the specified month and year.
     """
-    global ho
-    outside_convection_heat_transfer = ho
     
     if month == "current_month": month = datetime.now().month
     if year == "current_year": year = datetime.now().year
-
-    if surface_tilt == 0:
-        LWR = 3.9
-    else:
-        LWR = 0.
 
     f1 = f'{year}-{month}-{day} 00:00'
     f2 = f'{year}-{month}-{day} 23:59'
@@ -62,58 +50,84 @@ def Tsa(
     del dia_promedio['apparent_elevation']
     
     sunrise,_ = get_sunrise_sunset_times(dia_promedio)
-    tTmax,Tmin,Tmax = calculate_tTmaxTminTmax(month,epw)
+    tTmax,Tmin,Tmax = calculate_tTmaxTminTmax(month, epw)
 
     # Calculate ambient temperature y add to the DataFrame
-    dia_promedio = temperature_model(dia_promedio, Tmin, Tmax, sunrise, tTmax)
+    dia_promedio = add_temperature_model(dia_promedio, Tmin, Tmax, sunrise, tTmax)
     
-    # Add Ig, Ib, Id a dia_promedio 
-    dia_promedio = add_IgIbId_Tn(dia_promedio,epw,month,f1,f2,timezone)
+    # Add Ig, Ib, Id y Tn a dia_promedio 
+    dia_promedio = add_IgIbId_Tn(dia_promedio, epw, month, f1, f2, timezone)
     
+    # Add DeltaTn
+    DeltaTa= dia_promedio.Ta.max() - dia_promedio.Ta.min()
+    dia_promedio['DeltaTn'] = calculate_DtaTn(DeltaTa)
+    
+    return dia_promedio
+
+def Tsa(
+    meanDay_dataframe:pd.DataFrame,
+    solar_absortance: float,
+    surface_tilt: float,
+    surface_azimuth: float,
+    ) -> pd.DataFrame: 
+    """
+    Calculates the sun-air temperature per second for the average day experienced
+    by a surface based on a meanDay dataframe.
+    
+    Args:
+        meanDay_dataframe (DataFrame): Data frame containing ambient temperature ( Ta ), global ( Ig ), direct ( Ib ) and diffuse irradiance ( Id ). 
+        solar_absortance (float): Solar absortance of the system's external material.
+        surface_tilt (float): Surface tilt relative to the ground, 90° == Vertical.
+        surface_azimuth (float): Deviation from true north, 0° == North.
+    
+    Returns:
+        DataFrame: Predicted sun-air temperature ( Tsa ) and solar irradiance ( Is )
+        per second for the average day.
+    """
+    
+    global ho
+    outside_convection_heat_transfer = ho
+    
+    if surface_tilt == 0:
+        LWR = 3.9
+    else:
+        LWR = 0.
+        
     total_irradiance = pvlib.irradiance.get_total_irradiance(
         surface_tilt=surface_tilt,
         surface_azimuth=surface_azimuth,
-        dni=dia_promedio['Ib'],
-        ghi=dia_promedio['Ig'],
-        dhi=dia_promedio['Id'],
-        solar_zenith=dia_promedio['zenith'],
-        solar_azimuth=dia_promedio['azimuth']
+        dni=meanDay_dataframe['Ib'],
+        ghi=meanDay_dataframe['Ig'],
+        dhi=meanDay_dataframe['Id'],
+        solar_zenith=meanDay_dataframe['zenith'],
+        solar_azimuth=meanDay_dataframe['azimuth']
     )
-    dia_promedio['Is'] = total_irradiance.poa_global
     
-    # Add Tsa, DeltaTn
-    dia_promedio['Tsa'] = dia_promedio.Ta + dia_promedio.Is*solar_absortance/outside_convection_heat_transfer - LWR
-    DeltaTa= dia_promedio.Ta.max() - dia_promedio.Ta.min()
-
-    dia_promedio['DeltaTn'] = calculate_DtaTn(DeltaTa)
+    # Add Is
+    meanDay_dataframe['Is'] = total_irradiance.poa_global
     
-    epw_mes = epw.loc[epw.index.month==int(month)]
-    hora_minutos = epw_mes.resample('D').To.idxmax()
-    hora = hora_minutos.dt.hour
-    minuto = hora_minutos.dt.minute
-    tTmax = hora.mean() +  minuto.mean()/60 
-    Tmin =  epw_mes.resample('D').To.min().resample('ME').mean().iloc[0]
-    Tmax =  epw_mes.resample('D').To.max().resample('ME').mean().iloc[0]
-
-    return dia_promedio
-    
+    # Add Tsa
+    meanDay_dataframe['Tsa'] = meanDay_dataframe.Ta + meanDay_dataframe.Is*solar_absortance/outside_convection_heat_transfer - LWR
+       
+    return meanDay_dataframe
+  
 def solveCS(
     constructive_system:list,
     Tsa_dataframe:pd.DataFrame,
     )->pd.DataFrame:
     """
-    Solves the constructive system's inside temperature with the TSA simulation dataframe.
+    Solves the constructive system's inside temperature with the Tsa simulation dataframe.
 
     Args:
-        constructive_system (list): List of tuples with the material and width
-        Tsa_dataframe (pd.DataFrame): Predicted sun-air temperature (TSA) per second for the average day DataFrame.
+        constructive_system (list): list of tuples from outside to inside with material and width.
+        Tsa_dataframe (DataFrame): Predicted sun-air temperature ( Tsa ) per second for the average day DataFrame.
         
     Returns:
-        pd.DataFrame: modified Tsa_dataframe with the constructive system solution.
+        DataFrame: Interior temperature ( Ti ) for the constructive system.
     """
     
     global La 
-    global Nx     
+    global Nx     # Number of elements to discretize
     global ho     # Outside convection heat transfer
     global hi     # Inside convection heat transfer
     global dt  
@@ -138,7 +152,7 @@ def solveCS(
             Tsa_dataframe.loc[tiempo,"Ti"] = Ti
         Tnew = T.copy()
         C = abs(Told - Tnew).mean()
-        FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
-        FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
+    #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
+    #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
     
     return Tsa_dataframe

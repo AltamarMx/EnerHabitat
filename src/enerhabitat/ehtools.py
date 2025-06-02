@@ -4,6 +4,7 @@ import configparser
 import warnings
 import os
 import math
+from numba import njit
 from dateutil.parser import parse
 
 """
@@ -11,7 +12,7 @@ from dateutil.parser import parse
     Configuration tools
 =============================
 """
-_eh_config = "materials.ini"
+_eh_config = "materials.ini"    # Default configuration file path
 
 def materials(new_config_file=None):
     """
@@ -30,7 +31,7 @@ def materials(new_config_file=None):
     target_file = new_config_file if new_config_file is not None else _eh_config
     
     try:    
-        # Verificar si el archivo existe y crearlo si es necesario
+        # Verificar si el archivo existe
         if not os.path.isfile(target_file):
             raise FileNotFoundError("f{target_file} not found")
         
@@ -38,17 +39,30 @@ def materials(new_config_file=None):
         if new_config_file is not None:
             _eh_config = new_config_file
         
-        return _eh_config
     except FileNotFoundError:
-        print(f"Error: {target_file} not found")        
+        print(f"Error: {target_file} not found")
+    finally:
+        return _eh_config      
 
 def get_list_materials():
+    """
+    Returns the list of materials contained in the configuration file
+
+    Returns:
+        list: List of materials in the configuration file
+    """
     config = configparser.ConfigParser()
     config.read(materials())
     materiales = config.sections()
     return materiales
 
 def read_materials():
+    """
+    returns a dictionary with the list of materials and their properties
+
+    Returns:
+        dict: _description_
+    """
     data = configparser.ConfigParser()
     data.read(materials())
 
@@ -73,19 +87,19 @@ def read_materials():
 =============================
 """
 
-def temperature_model(df, Tmin, Tmax, Ho, Hi):
+def add_temperature_model(df, Tmin, Tmax, Ho, Hi):
     """
     Calcula la temperatura ambiente y agrega una columna 'Ta' al DataFrame.
 
-    Parameters:
+    Args:
         df (pd.DataFrame): DataFrame con la columna 'index' que representa los tiempos.
         Tmin (float): Temperatura mínima.
         Tmax (float): Temperatura máxima.
         Ho (float): Hora de amanecer (en horas).
-        Hi (float): Hora de m'axima temperatura (en horas).
+        Hi (float): Hora de máxima temperatura (en horas).
 
     Returns:
-        pd.DataFrame: DataFrame con una nueva columna 'Ta' que contiene la temperatura ambiente.
+        pd.DataFrame: DataFrame con una nueva columna Ta que contiene la temperatura ambiente.
     """
     Ho_sec = Ho * 3600
     Hi_sec = Hi * 3600
@@ -106,37 +120,32 @@ def temperature_model(df, Tmin, Tmax, Ho, Hi):
     df['Ta'] = Ta
     return df
 
-def calculate_tTmaxTminTmax(mes,epw):
-    # epw = read_epw(f_epw,alias=True,year='2024')
+def calculate_tTmaxTminTmax(mes, epw):
     epw_mes = epw.loc[epw.index.month==int(mes)]
     hora_minutos = epw_mes.resample('D').To.idxmax()
     hora = hora_minutos.dt.hour
     minuto = hora_minutos.dt.minute
-    tTmax = hora.mean() +  minuto.mean()/60 
-    # epw_mes = epw.loc[epw.index.month==int(mes)]
-    # horas  = epw_mes.resample('D').To.idxmax().resample('ME').mean().dt.hour 
-    # minutos = epw_mes.resample('D').To.idxmax().resample('ME').mean().dt.minute
-    # tTmax = horas.iloc[0]+ minutos.iloc[0]/60 
+    tTmax = hora.mean() +  minuto.mean()/60
     Tmin =  epw_mes.resample('D').To.min().resample('ME').mean().iloc[0]
     Tmax =  epw_mes.resample('D').To.max().resample('ME').mean().iloc[0]
     
     return tTmax,Tmin,Tmax
 
-def add_IgIbId_Tn(dia,epw,mes,f1,f2,timezone):
-    # epw = read_epw(f_epw,alias=True,year='2024')
+def add_IgIbId_Tn(df, epw, mes, f1, f2, timezone):
     epw_mes = epw.loc[epw.index.month==int(mes)]
     Irr = epw_mes.groupby(by=epw_mes.index.hour)[['Ig','Id','Ib']].mean()
     tiempo = pd.date_range(start=f1, end=parse(f2), freq='1h',tz=timezone)
     Irr.index = tiempo
     Irr = Irr.resample('1s').interpolate(method='time')
-    dia['Ig'] = Irr.Ig
-    dia['Ib'] = Irr.Ib
-    dia['Id'] = Irr.Id
-    dia.ffill(inplace=True)
-    dia['Tn'] = 13.5 + 0.54*dia.Ta.mean()
+    df['Ig'] = Irr.Ig
+    df['Ib'] = Irr.Ib
+    df['Id'] = Irr.Id
+    df.ffill(inplace=True)
+    df['Tn'] = 13.5 + 0.54*df.Ta.mean()
     
-    return dia
+    return df
 
+@njit
 def calculate_DtaTn(Delta):
     if Delta < 13:
         tmp2 = 2.5 / 2
@@ -164,7 +173,9 @@ def calculate_DtaTn(Delta):
     return tmp2
 
 def get_sunrise_sunset_times(df):
-#   Función para calcular Ho y Hi
+    """
+    Función para calcular Ho y Hi
+    """
     sunrise_time = df[df['elevation'] >= 0].index[0]
     sunset_time = df[df['elevation'] >= 0].index[-1]
     
@@ -268,80 +279,6 @@ def readEPW(file,year=None,alias=False,warns=True):
         data.rename(columns=rename,inplace=True)
     return data, lat, lon, alt, tmz
 
-def toEPW(file,df,epw_file):
-    """
-    Save dataframe to EPW (no probada)
-    
-    Arguments:
-        file : path location of EPW file
-    """
-  
-    names = ['Year',
-             'Month',
-             'Day',
-             'Hour',
-             'Minute',
-             'Data Source and Uncertainty Flags',
-             'Dry Bulb Temperature',
-             'Dew Point Temperature',
-             'Relative Humidity',
-             'Atmospheric Station Pressure',
-             'Extraterrestrial Horizontal Radiation',
-             'Extraterrestrial Direct Normal Radiation',
-             'Horizontal Infrared Radiation Intensity',
-             'Global Horizontal Radiation',
-             'Direct Normal Radiation',
-             'Diffuse Horizontal Radiation',
-             'Global Horizontal Illuminance',
-             'Direct Normal Illuminance',
-             'Diffuse Horizontal Illuminance',
-             'Zenith Luminance',
-             'Wind Direction',
-             'Wind Speed',
-             'Total Sky Cover',
-             'Opaque Sky Cover',
-             'Visibility',
-             'Ceiling Height',
-             'Present Weather Observation',
-             'Present Weather Codes','Precipitable Water','Aerosol Optical Depth','Snow Depth','Days Since Last Snowfall',
-             'Albedo','Liquid Precipitation Depth','Liquid Precipitation Quantity']
-    
-    
-    rename = {'To':'Dry Bulb Temperature'        ,
-              'RH':'Relative Humidity'           ,
-              'P' :'Atmospheric Station Pressure',
-              'Ig':'Global Horizontal Radiation' ,
-              'Ib':'Direct Normal Radiation'     ,
-              'Id':'Diffuse Horizontal Radiation',
-              'Wd':'Wind Direction'              ,
-              'Ws':'Wind Speed'                  }
-    
-    df2 = df.copy()
-    df2.rename(columns=rename,inplace=True)
-    df2['Year']    = df2.index.year
-    df2['Month']   = df2.index.month
-    df2['Day']     = df2.index.day
-    df2['Hour']    = df2.index.hour
-    df2['Minute']  = 60
-    
-    with open(epw_file) as myfile:
-        head = [next(myfile) for x in range(8)]
-    
-    epw_header = ''
-    for texto in head:
-        epw_header += texto
-        
-    df2[names].to_csv(file,header=None,index=False)
-    with open(file) as f:
-        epw = f.read()
-    
-    epw_tail = ''
-    for texto in epw:
-        epw_tail += texto
-    epw = epw_header + epw_tail
-    
-    with open(file, 'w') as f:
-        f.write(epw)
 
 """
 =============================
@@ -349,19 +286,19 @@ def toEPW(file,df,epw_file):
 =============================
 """
 
-def set_construction(propiedades,tuplas):
+def set_construction(propiedades, tuplas):
     """
-    Actualiza el diccionario cs con los valores de L y las propiedades del material proporcionados en las tuplas.
+    Actualiza el diccionario cs con  las propiedades del material y los valores de L proporcionados en las tuplas.
     
-    Parameters:
-    propiedades (dict): Diccionario con las propiedades de los materiales.
-    tuplas (list): Lista de tuplas, donde cada tupla contiene el valor de L y el nombre del material.
+    Argss:
+        propiedades (dict): Diccionario con las propiedades de los materiales.
+        tuplas (list): Lista de tuplas, donde cada tupla contiene el material y el valor de L.
     
     Returns:
-    dict: Diccionario actualizado cs.
+        dict: Diccionario actualizado cs.
     """
     cs ={}
-    for i, (L, material) in enumerate(tuplas, start=1):
+    for i, (material, L) in enumerate(tuplas, start=1):
         capa = f"L{i}"
         cs[capa] = {
             "L": L,
@@ -418,6 +355,7 @@ def set_k_rhoc(cs, nx):
 
     return k_array, rhoc_array, dx
 
+@njit
 def calculate_coefficients(dt, dx, k, nx, rhoc, T, To, ho, Ti, hi):
     """
     Calcula los coeficientes a, b, c y d para el sistema de ecuaciones.
@@ -464,26 +402,24 @@ def calculate_coefficients(dt, dx, k, nx, rhoc, T, To, ho, Ti, hi):
 
     return a, b, c, d
 
+@njit
 def solve_PQ(a, b, c, d, T, nx, Tint, hi, La, dt):
     """
     Resuelve el sistema de ecuaciones usando el método TDMA y actualiza las temperaturas para el siguiente paso temporal.
 
-    Parameters:
-    a (numpy.ndarray): Arreglo de coeficientes a.
-    b (numpy.ndarray): Arreglo de coeficientes b.
-    c (numpy.ndarray): Arreglo de coeficientes c.
-    d (numpy.ndarray): Arreglo de coeficientes d.
-    T (numpy.ndarray): Arreglo de temperaturas.
-    nx (int): Número de elementos de discretización.
-    Tint (float): Temperatura interna.
-    hi (float): Coeficiente convectivo interno.
-    rhoair (float): Densidad del aire.
-    cair (float): Calor específico del aire.
-    La (float): Parámetro adicional (longitud, área, etc.).
-    dt (float): Paso temporal.
-    Qin (float): Calor interno.
-    Tintaverage (float): Temperatura interna promedio.
-    Ein (float): Energía interna.
+    Args:
+        a (numpy.ndarray): Arreglo de coeficientes a.
+        b (numpy.ndarray): Arreglo de coeficientes b.
+        c (numpy.ndarray): Arreglo de coeficientes c.
+        d (numpy.ndarray): Arreglo de coeficientes d.
+        T (numpy.ndarray): Arreglo de temperaturas.
+        nx (int): Número de elementos de discretización.
+        Tint (float): Temperatura interna.
+        hi (float): Coeficiente convectivo interno.
+        rhoair (float): Densidad del aire.
+        cair (float): Calor específico del aire.
+        La (float): Parámetro adicional (longitud, área, etc.).
+        dt (float): Paso temporal.
 
     Returns:
     tuple: (T, Tint, Qin, Tintaverage, Ein) arreglos de temperaturas y parámetros actualizados.
