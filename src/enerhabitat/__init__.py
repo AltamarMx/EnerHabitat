@@ -4,11 +4,11 @@ import pytz
 from datetime import datetime
 from .ehtools import *
 
-La = 2.5
+La = 2.5    # Length of the dummy frame
 Nx = 20     # Number of elements to discretize
 ho = 13     # Outside convection heat transfer
 hi = 8.6    # Inside convection heat transfer
-dt = 60
+dt = 60     # Time step in seconds
 
 def meanDay(
     epw_file : str,
@@ -126,11 +126,11 @@ def solveCS(
         DataFrame: Interior temperature ( Ti ) for the constructive system.
     """
     
-    global La 
+    global La     # Length of the dummy frame
     global Nx     # Number of elements to discretize
     global ho     # Outside convection heat transfer
     global hi     # Inside convection heat transfer
-    global dt  
+    global dt     # Time step
        
     propiedades = read_materials()
     

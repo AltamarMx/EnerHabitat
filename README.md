@@ -135,11 +135,11 @@ You can set various configuration values ​​to modify the behavior of the cal
 ```python
 import enerhabitat as eh
 
-eh.La = 2.5
+eh.La = 2.5    # Length of the fictional room
 eh.Nx = 20     # Number of elements to discretize
 eh.ho = 13     # Outside convection heat transfer
 eh.hi = 8.6    # Inside convection heat transfer
-eh.dt = 60
+eh.dt = 60     # Time step in seconds
 ```
 
 ## Dependencies
