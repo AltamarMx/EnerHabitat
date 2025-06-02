@@ -2,17 +2,17 @@
 ### Tools for evaluating the thermal performance of structures based on EPW files
 
 ## Table of contents
-  - [Getting started](#getting-started)
-    - [Installation](#installation)
-    - [Folder structure](#folder-structure)
-  - [Main functions](#main-functions)
-    - [meanDay](#meanday)
-    - [Tsa](#tsa)
-    - [solveCS](#solvecs)
-  - [Materials](#materials)
-  - [Other parameters](#other-parameters)
-  - [Dependencies](#dependencies)
-  - [License](#license)
+- [Getting started](#getting-started)
+  - [Installation](#installation)
+  - [Folder structure](#folder-structure)
+- [Main functions](#main-functions)
+  - [meanDay](#meanday)
+  - [Tsa](#tsa)
+  - [solveCS](#solvecs)
+- [Materials](#materials)
+- [Other parameters](#other-parameters)
+- [Dependencies](#dependencies)
+- [License](#license)
 
 ## Getting started
 **enerhabitat** is a Python package for thermal simulation of constructive systems based on meteorological data from EPW files. The values that are calculated include:
