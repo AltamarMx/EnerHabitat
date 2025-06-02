@@ -1,6 +1,6 @@
 [project]
 name = "enerhabitat"
-version = "0.1.9"
+version = "0.1.10"
 authors = [
     {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"},
     {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"}
@@ -12,9 +12,13 @@ classifiers = [
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
-    "Natural Language :: Spanish",
     "Operating System :: OS Independent",
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Education :: Testing",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Topic :: Software Development :: Libraries :: Python Modules"
