@@ -1,0 +1,39 @@
+[project]
+name = "enerhabitat"
+version = "0.1.11"
+authors = [
+    {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"},
+    {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"}
+]
+description = "Paquete instalable para EnerHabitat"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Education :: Testing",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "numba>=0.60.0",
+    "pvlib>=0.12.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/AltamarMx/eh_development"
+Issues = "https://github.com/AltamarMx/eh_development"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
