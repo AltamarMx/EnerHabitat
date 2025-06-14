@@ -451,3 +451,10 @@ def solve_PQ(a, b, c, d, T, nx, Tint, hi, La, dt):
 
     return T, Tint
 
+def solve_PQ_AC(a, b, c, d, T, nx, Tint, hi, La, dt):
+    """Función para resolver PQ con A/C. Aún no implementada
+
+    Returns:
+        tuple: ( T, Tint, Qin, Tintaverage, Ein ) arreglos de temperaturas y parámetros actualizados.
+    """
+    return solve_PQ(a, b, c, d, T, nx, Tint, hi, La, dt)

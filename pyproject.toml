@@ -3,7 +3,7 @@ name = "enerhabitat"
 version = "0.1.11"
 authors = [
     {name="Guillermo Barrios del Valle", email="gbv@ier.unam.mx"},
-    {name="Fernando Rodríguez Calderón", email="ferrodriguez2509@gmail.com"}
+    {name="Fernando Rodriguez Calderon", email="ferrodriguez2509@gmail.com"}
 ]
 description = "Paquete instalable para EnerHabitat"
 readme = "README.md"

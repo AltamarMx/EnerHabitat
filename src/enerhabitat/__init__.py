@@ -114,6 +114,7 @@ def Tsa(
 def solveCS(
     constructive_system:list,
     Tsa_dataframe:pd.DataFrame,
+    AC = False
     )->pd.DataFrame:
     """
     Solves the constructive system's inside temperature with the Tsa simulation dataframe.
@@ -144,15 +145,32 @@ def solveCS(
     Tsa_dataframe = Tsa_dataframe.iloc[::dt]
     
     C = 1
-    while C > 5e-4: 
-        Told = T.copy()
-        for tiempo, datos in Tsa_dataframe.iterrows():
-            a,b,c,d = calculate_coefficients(dt, dx, k, Nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
-            T, Ti = solve_PQ(a, b, c, d, T, Nx, datos['Ti'], hi, La, dt)
-            Tsa_dataframe.loc[tiempo,"Ti"] = Ti
-        Tnew = T.copy()
-        C = abs(Told - Tnew).mean()
-    #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
-    #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
     
+    if AC:  # AC = True
+        while C > 5e-4: 
+            Told = T.copy()
+            for tiempo, datos in Tsa_dataframe.iterrows():
+                a,b,c,d = calculate_coefficients(dt, dx, k, Nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
+                # Llamado de funcion para Acc
+                T, Ti = solve_PQ_AC(a, b, c, d, T, Nx, datos['Ti'], hi, La, dt)
+                Tsa_dataframe.loc[tiempo,"Ti"] = Ti
+            Tnew = T.copy()
+            C = abs(Told - Tnew).mean()
+        #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
+        #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
+    
+    
+    else:
+        while C > 5e-4: 
+            Told = T.copy()
+            for tiempo, datos in Tsa_dataframe.iterrows():
+                a,b,c,d = calculate_coefficients(dt, dx, k, Nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
+                T, Ti = solve_PQ(a, b, c, d, T, Nx, datos['Ti'], hi, La, dt)
+                Tsa_dataframe.loc[tiempo,"Ti"] = Ti
+            Tnew = T.copy()
+            C = abs(Told - Tnew).mean()
+        #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
+        #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
+
+        
     return Tsa_dataframe
