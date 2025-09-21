@@ -32,18 +32,18 @@ The source code is currently hosted on GitHub at [eh_development](https://github
 Binary installers for the latest released version are available at the Test Python Package Index [TestPyPI](https://test.pypi.org/project/enerhabitat) 
 
 ```bash
-pip install -i https://test.pypi.org/simple/ enerhabitat
+pip install enerhabitat
 ```
 
 If you're working with the [uv](https://docs.astral.sh/uv/) Python package manager you can use the following
 
 ```bash
-$ uv pip install --index-url https://test.pypi.org/simple/ enerhabitat
+$ uv add enerhabitat
 ```
 
 ### Folder structure
 
-The following shows basic folder structure
+The following shows the basic folder structure recommended
 ```
 ├── main.py
 ├── materials.ini   # Materials properties
@@ -53,11 +53,15 @@ The following shows basic folder structure
 ```
 
 ## Main functions
+
+Load the EnerHabitat package for use
+```python
+import enerhabitat as eh
+```
+
 ### meanDay
 Calculates the ambient temperature, global, beam and diffuse irradiance per second for the average day based on EPW file
 ```python
-import enerhabitat as eh
-
 dia_promedio = eh.meanDay(epw_file = "epw/example_file.epw")
 ```
 
@@ -69,12 +73,11 @@ time | zenith | elevation | azimuth | equation_of_time | Ta | Ig | Ib | Id |Tn |
 
 ### Tsa
 
-Calculates the sun-air temperature and solar irradiance per second for the average day
+Calculates the sol-air temperature and solar irradiance per second for the average day
 
 ```python
-import enerhabitat as eh
 
-sun_air = eh.Tsa(
+Tsa = eh.Tsa(
     dia_promedio,           # DataFrame with Ib, Ig, Id
     solar_absortance = 0.8, # Surface color
     surface_tilt = 90,      # 90 = vertical
@@ -84,10 +87,9 @@ sun_air = eh.Tsa(
 ```
 
 ### solveCS
-Solves the constructive system's inside temperature for a Tsa simulation dataframe
+Solves the constructive system heat transfer to calculate inside temperature for a Tsa simulation
 
 ```python
-import enerhabitat as eh
 
 # list of tuples from outside to inside with material and width
 constructive_system = [
@@ -97,7 +99,7 @@ constructive_system = [
 
 interior = eh.solveCS(
     constructive_system,  
-    sun_air_df      # DataFrame with Tn, Ta, Tsa
+    Tsa      # DataFrame with Tn, Ta, Tsa
     )
 
 ```
@@ -133,10 +135,9 @@ eh.materials("./config/new_materials.ini")
 You can set various configuration values ​​to modify the behavior of the calculations
 
 ```python
-import enerhabitat as eh
 
 eh.La = 2.5    # Length of the fictional room
-eh.Nx = 20     # Number of elements to discretize
+eh.Nx = 100     # Number of elements to discretize the construction system
 eh.ho = 13     # Outside convection heat transfer
 eh.hi = 8.6    # Inside convection heat transfer
 eh.dt = 60     # Time step in seconds
