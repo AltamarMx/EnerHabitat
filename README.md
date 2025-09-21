@@ -18,18 +18,18 @@
 **enerhabitat** is a Python package for thermal simulation of constructive systems based on meteorological data from EPW files. The values that are calculated include:
 
 - Ta  : Ambient temperature
-- Tsa : Sun-Air temperature
+- Tsa : Sol-air temperature
 - Ti  : Interior temperature
-- Ig  : Global irradiance
-- Ib  : Beam irradiance
-- Id  : Diffuse irradiance
+- Ig  : Global horiztonal irradiance
+- Ib  : Direct normal irradiance
+- Id  : Diffuse horizontal irradiance
 - Is  : Surface irradiance
 
 ### Installation
 
-The source code is currently hosted on GitHub at [eh_development](https://github.com/AltamarMx/eh_development)
+The source code is currently hosted on GitHub at [eh_development](https://github.com/AltamarMx/EnerHabitat)
 
-Binary installers for the latest released version are available at the Test Python Package Index [TestPyPI](https://test.pypi.org/project/enerhabitat) 
+Binary installers for the latest released version are available at the Test Python Package Index [TestPyPI](https://pypi.org/project/enerhabitat) 
 
 ```bash
 pip install enerhabitat
@@ -123,8 +123,6 @@ c   = 1480
 To set a configuration file, use the `materials()` function and specify the `path`
 
 ```python
-import enerhabitat as eh
-
 eh.materials("./config/new_materials.ini")
 ```
 ```shell
@@ -152,4 +150,4 @@ eh.dt = 60     # Time step in seconds
 
 
 ## License
-Code released under the [MIT license](https://github.com/AltamarMx/eh_development/blob/main/LICENSE).
+Code released under the [MIT license](https://github.com/AltamarMx/enerhabitat/main/LICENSE).
