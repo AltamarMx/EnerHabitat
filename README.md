@@ -20,7 +20,7 @@
 - Ta  : Ambient temperature
 - Tsa : Sol-air temperature
 - Ti  : Interior temperature
-- Ig  : Global horiztonal irradiance
+- Ig  : Global horizontal irradiance
 - Ib  : Direct normal irradiance
 - Id  : Diffuse horizontal irradiance
 - Is  : Surface irradiance
