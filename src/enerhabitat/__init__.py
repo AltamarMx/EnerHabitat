@@ -132,6 +132,8 @@ def solveCS(
     global ho     # Outside convection heat transfer
     global hi     # Inside convection heat transfer
     global dt     # Time step
+
+    SC_dataframe = Tsa_dataframe.copy()
        
     propiedades = read_materials()
     
@@ -139,38 +141,40 @@ def solveCS(
     
     k, rhoc, dx = set_k_rhoc(cs, Nx)
 
-    T = np.full(Nx, Tsa_dataframe.Tn.mean())
-    Tsa_dataframe['Ti'] = Tsa_dataframe.Tn.mean()
+    T = np.full(Nx, SC_dataframe.Tn.mean())
+    SC_dataframe['Ti'] = SC_dataframe.Tn.mean()
     
-    Tsa_dataframe = Tsa_dataframe.iloc[::dt]
+    SC_dataframe = SC_dataframe.iloc[::dt]
     
     C = 1
     
     if AC:  # AC = True
         while C > 5e-4: 
             Told = T.copy()
-            for tiempo, datos in Tsa_dataframe.iterrows():
+            for tiempo, datos in SC_dataframe.iterrows():
                 a,b,c,d = calculate_coefficients(dt, dx, k, Nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
                 # Llamado de funcion para Acc
                 T, Ti = solve_PQ_AC(a, b, c, d, T, Nx, datos['Ti'], hi, La, dt)
-                Tsa_dataframe.loc[tiempo,"Ti"] = Ti
+                SC_dataframe.loc[tiempo,"Ti"] = Ti
             Tnew = T.copy()
             C = abs(Told - Tnew).mean()
-        #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
-        #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
-    
+        #    FD   = (SC_dataframe.Ti.max() - SC_dataframe.Ti.min())/(SC_dataframe.Ta.max()-SC_dataframe.Ta.min())
+        #    FDsa = (SC_dataframe.Ti.max() - SC_dataframe.Ti.min())/(SC_dataframe.Tsa.max()-SC_dataframe.Tsa.min())
+
+        resultados = SC_dataframe['Ti']
     
     else:
         while C > 5e-4: 
             Told = T.copy()
-            for tiempo, datos in Tsa_dataframe.iterrows():
+            for tiempo, datos in SC_dataframe.iterrows():
                 a,b,c,d = calculate_coefficients(dt, dx, k, Nx, rhoc, T, datos["Tsa"], ho, datos["Ti"], hi)
                 T, Ti = solve_PQ(a, b, c, d, T, Nx, datos['Ti'], hi, La, dt)
-                Tsa_dataframe.loc[tiempo,"Ti"] = Ti
+                SC_dataframe.loc[tiempo,"Ti"] = Ti
             Tnew = T.copy()
             C = abs(Told - Tnew).mean()
-        #    FD   = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Ta.max()-Tsa_dataframe.Ta.min())
-        #    FDsa = (Tsa_dataframe.Ti.max() - Tsa_dataframe.Ti.min())/(Tsa_dataframe.Tsa.max()-Tsa_dataframe.Tsa.min())
+        #    FD   = (SC_dataframe.Ti.max() - SC_dataframe.Ti.min())/(SC_dataframe.Ta.max()-SC_dataframe.Ta.min())
+        #    FDsa = (SC_dataframe.Ti.max() - SC_dataframe.Ti.min())/(SC_dataframe.Tsa.max()-SC_dataframe.Tsa.min())
 
-        
-    return Tsa_dataframe
+        resultados = SC_dataframe['Ti']
+    
+    return resultados
