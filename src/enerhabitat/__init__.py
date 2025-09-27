@@ -138,7 +138,6 @@ def solveCS(
     propiedades = read_materials()
     
     cs = set_construction(propiedades, constructive_system)
-    
     k, rhoc, dx = set_k_rhoc(cs, Nx)
 
     T = np.full(Nx, SC_dataframe.Tn.mean())
